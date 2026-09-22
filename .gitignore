@@ -1,0 +1,14 @@
+# colcon outputs (any workspace)
+build/
+install/
+log/
+# python
+**/__pycache__/
+*.pyc
+# logs
+*.log
+# external repos cloned into the workspace (not our code)
+PX4-Autopilot/
+px4_msgs/
+hege_ws/src/px4_msgs/
+gz_ros2_control_ws/src/gz_ros2_control/

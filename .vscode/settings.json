@@ -1,0 +1,11 @@
+{
+    "cmake.sourceDirectory": "/home/oguz/HEGE_ROS2_HUMBLE_DEVCONTAINER_STARTER/PX4-Autopilot",
+    "terminal.integrated.cwd": "${workspaceFolder}/hege_ws",
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python.defaultInterpreterPath": "/usr/bin/python3",
+    "python.analysis.extraPaths": [
+    "/opt/ros/humble/local/lib/python3.10/dist-packages",
+    "/opt/ros/humble/lib/python3.10/site-packages"
+  ]
+}
+

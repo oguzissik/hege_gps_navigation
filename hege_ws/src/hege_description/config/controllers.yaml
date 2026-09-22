@@ -1,0 +1,44 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 50
+    use_sim_time: true
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    ackermann_steering_controller:
+      type: ackermann_steering_controller/AckermannSteeringController
+
+ackermann_steering_controller:
+  ros__parameters:
+    use_sim_time: true
+
+    reference_timeout: 0.5
+    front_steering: true
+
+    # Humble controller ordering: right, left
+    rear_wheels_names:
+      - right_rear_wheel_joint
+      - left_rear_wheel_joint
+
+    front_wheels_names:
+      - right_steer_joint
+      - left_steer_joint
+
+    position_feedback: false
+    open_loop: false
+    reduce_wheel_speed_until_steering_reached: true
+    velocity_rolling_window_size: 10
+
+    # cmd_vel_relay publishes TwistStamped
+    use_stamped_vel: true
+
+    wheelbase: 1.90
+    front_wheel_track: 1.55
+    rear_wheel_track: 1.55
+    front_wheels_radius: 0.28
+    rear_wheels_radius: 0.40
+
+    odom_frame_id: odom
+    base_frame_id: base_footprint
+    enable_odom_tf: true

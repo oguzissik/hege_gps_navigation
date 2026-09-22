@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+  <world name="hege_flat_field">
+    <!-- Replace with surveyed field coordinates when known. -->
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <world_frame_orientation>ENU</world_frame_orientation>
+      <latitude_deg>52.466</latitude_deg>
+      <longitude_deg>12.958</longitude_deg>
+      <elevation>35.0</elevation>
+      <heading_deg>180</heading_deg>
+    </spherical_coordinates>
+    <include><uri>model://sun</uri></include>
+    <include><uri>model://ground_plane</uri></include>
+    <physics name="ode" default="true" type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+      <ode><solver><type>quick</type><iters>100</iters><sor>1.3</sor></solver></ode>
+    </physics>
+    <plugin name="gazebo_ros_state" filename="libgazebo_ros_state.so">
+      <ros><namespace>/</namespace></ros><update_rate>50.0</update_rate>
+    </plugin>
+  </world>
+</sdf>
