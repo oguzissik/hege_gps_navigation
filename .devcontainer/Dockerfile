@@ -91,9 +91,10 @@ RUN groupadd --gid "${USER_GID}" "${USERNAME}" \
 
 ENV DEBIAN_FRONTEND=dialog
 ENV ROS_DISTRO=humble
-ENV HEGE_WS=/workspaces/hege_gps_navigation
+ENV HEGE_REPO=/workspaces/hege_gps_navigation
+ENV HEGE_WS=/workspaces/hege_gps_navigation/hege_ws
 
 USER ${USERNAME}
-WORKDIR ${HEGE_WS}
+WORKDIR ${HEGE_REPO}
 
 CMD ["bash"]

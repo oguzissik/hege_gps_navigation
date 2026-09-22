@@ -1,10 +1,11 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, RegisterEventHandler
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, RegisterEventHandler
+from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command
+from launch.substitutions import Command, LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.descriptions import ParameterValue
 
@@ -15,6 +16,7 @@ def generate_launch_description():
     model = os.path.join(share, 'urdf', 'hege.urdf.xacro')
     world = os.path.join(share, 'worlds', 'flat_field.world')
     robot_description = ParameterValue(Command(['xacro ', model]), value_type=str)
+    evaluate_gps = LaunchConfiguration('evaluate_gps')
 
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(ros_gz_share, 'launch', 'gz_sim.launch.py')),
@@ -26,12 +28,19 @@ def generate_launch_description():
         package='ros_gz_sim', executable='create', output='screen',
         arguments=['-topic', 'robot_description', '-name', 'hege', '-allow_renaming', 'false', '-z', '0.02'])
     bridge = Node(
-        package='ros_gz_bridge', executable='parameter_bridge', output='screen',
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        output='screen',
         arguments=[
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/imu/data@sensor_msgs/msg/Imu[gz.msgs.IMU',
             '/gps/fix@sensor_msgs/msg/NavSatFix[gz.msgs.NavSat',
-        ])
+            '/hege/ground_truth/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+        ],
+        remappings=[
+            ('/gps/fix', '/gps/fix_raw'),
+        ],
+    )
     joint_states = Node(
         package='controller_manager', executable='spawner',
         arguments=['joint_state_broadcaster', '--controller-manager', '/controller_manager'], output='screen')
@@ -41,9 +50,29 @@ def generate_launch_description():
     relay = Node(
         package='hege_description', executable='cmd_vel_relay.py',
         parameters=[{'use_sim_time': True}], output='screen')
+    gps_covariance = Node(
+        package='hege_evaluation',
+        executable='sim_gps_covariance',
+        parameters=[{
+            'use_sim_time': True,
+            'input_topic': '/gps/fix_raw',
+            'output_topic': '/gps/fix',
+            'horizontal_stddev_m': 2.0,
+            'vertical_stddev_m': 4.0,
+            'origin_latitude_deg': 52.466,
+        }],
+        output='screen',
+    )
+    gps_evaluator = Node(
+        package='hege_evaluation', executable='gps_noise_evaluator',
+        parameters=[{'use_sim_time': True}], output='screen',
+        condition=IfCondition(evaluate_gps))
 
     return LaunchDescription([
-        gazebo, state_publisher, bridge, spawn,
+        DeclareLaunchArgument(
+            'evaluate_gps', default_value='true',
+            description='compare simulated GPS against isolated Gazebo ground truth'),
+        gazebo, state_publisher, bridge, spawn, gps_covariance, gps_evaluator,
         RegisterEventHandler(OnProcessExit(target_action=spawn, on_exit=[joint_states])),
         RegisterEventHandler(OnProcessExit(target_action=joint_states, on_exit=[ackermann, relay])),
     ])
