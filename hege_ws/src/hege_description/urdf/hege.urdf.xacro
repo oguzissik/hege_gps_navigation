@@ -30,7 +30,6 @@
     <gazebo reference="${link}">
       <mu1>${wheel_mu_longitudinal}</mu1>
       <mu2>${wheel_mu_lateral}</mu2>
-      <fdir1>1 0 0</fdir1>
       <kp>10000000.0</kp>
       <kd>10000.0</kd>
       <minDepth>0.001</minDepth>
@@ -58,7 +57,7 @@
   <joint name="base_footprint_joint" type="fixed">
     <parent link="base_footprint"/>
     <child link="base_link"/>
-    <origin xyz="0 0 ${base_height}" rpy="0 0 0"/>
+    <origin xyz="0.95 0 ${base_height}" rpy="0 0 0"/>
   </joint>
 
   <xacro:macro name="rear_wheel" params="side y_sign">
@@ -155,10 +154,29 @@
       <always_on>true</always_on><update_rate>5.0</update_rate><visualize>false</visualize>
       <topic>/gps/fix</topic>
       <navsat><position_sensing>
-        <horizontal><noise type="gaussian"><mean>0</mean><stddev>${gps_horizontal_stddev}</stddev></noise></horizontal>
-        <vertical><noise type="gaussian"><mean>0</mean><stddev>${gps_vertical_stddev}</stddev></noise></vertical>
+        <!-- gz-sensors8 NavSatSensor::Update applies this value to
+             Latitude().Degree() and Longitude().Degree(). A 2.0 metre target
+             therefore needs about 1.8e-5 degrees, not the literal value 2.0. -->
+        <horizontal><noise type="gaussian"><mean>0</mean><stddev>${gps_horizontal_stddev_m/metres_per_latitude_degree}</stddev></noise></horizontal>
+        <vertical><noise type="gaussian"><mean>0</mean><stddev>${gps_vertical_stddev_m}</stddev></noise></vertical>
       </position_sensing></navsat>
     </sensor>
+  </gazebo>
+
+  <!-- Noise-free Gazebo truth for evaluation only. This topic must never be
+       fused into the GPS navigation estimator. Keeping it under /hege avoids
+       PX4's default odometry topic names when the SITL path is added later. -->
+  <gazebo>
+    <plugin filename="gz-sim-odometry-publisher-system"
+            name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>world</odom_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+      <dimensions>3</dimensions>
+      <odom_publish_frequency>50</odom_publish_frequency>
+      <odom_topic>/hege/ground_truth/odom</odom_topic>
+      <odom_covariance_topic>/hege/ground_truth/odom_with_covariance</odom_covariance_topic>
+      <tf_topic>/hege/ground_truth/pose</tf_topic>
+    </plugin>
   </gazebo>
 
   <ros2_control name="HegeGazeboSystem" type="system">

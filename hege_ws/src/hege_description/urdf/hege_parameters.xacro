@@ -55,13 +55,18 @@
   <xacro:property name="drive_effort_limit" value="3000.0"/>
   <xacro:property name="max_linear_speed" value="0.30"/>
   <xacro:property name="rear_wheel_speed_limit" value="${max_linear_speed/rear_wheel_radius}"/>
-  <xacro:property name="wheel_mu_longitudinal" value="0.80"/>
-  <xacro:property name="wheel_mu_lateral" value="1.00"/>
+  <xacro:property name="wheel_mu_longitudinal" value="0.8"/>
+  <xacro:property name="wheel_mu_lateral" value="0.8"/>
   <xacro:property name="wheel_slip" value="0.02"/>
 
-  <!-- Sensor model: standalone GNSS and a typical MEMS IMU starting point. -->
-  <xacro:property name="gps_horizontal_stddev" value="2.0"/>
-  <xacro:property name="gps_vertical_stddev" value="4.0"/>
+  <!-- Sensor model: standalone GNSS and a typical MEMS IMU starting point.
+       gz-sensors8 applies horizontal NavSat noise directly to latitude and
+       longitude expressed in DEGREES, while vertical noise is in metres.
+       Keep the human-facing horizontal parameter in metres and convert it in
+       hege.urdf.xacro. Never feed a metre value directly to <horizontal>. -->
+  <xacro:property name="gps_horizontal_stddev_m" value="2.0"/>
+  <xacro:property name="gps_vertical_stddev_m" value="4.0"/>
+  <xacro:property name="metres_per_latitude_degree" value="111195.0"/>
   <xacro:property name="imu_gyro_noise" value="2.0e-4"/>
   <xacro:property name="imu_accel_noise" value="1.7e-2"/>
   <xacro:property name="imu_gyro_bias" value="7.5e-6"/>
