@@ -30,7 +30,8 @@ class BridgeState(str, Enum):
     SOFTWARE_STOP = "SOFTWARE_STOP"  # ROS stop request; not a hardware emergency stop
     WAITING_PX4 = "WAITING_PX4"     # no VehicleStatus received yet
     PX4_STALE = "PX4_STALE"         # VehicleStatus or attitude too old (link problem)
-    NOT_OFFBOARD = "NOT_OFFBOARD"   # PX4 not in Offboard mode or not armed
+    NOT_OFFBOARD = "NOT_OFFBOARD"   # PX4 not in Offboard mode
+    NOT_ARMED = "NOT_ARMED"         # Offboard mode active but vehicle disarmed
     CMD_TIMEOUT = "CMD_TIMEOUT"     # PX4 ready but no fresh /cmd_vel
     ACTIVE = "ACTIVE"               # everything fresh -> motion allowed
 
@@ -87,8 +88,11 @@ def evaluate(inp: SafetyInputs, cfg: SafetyConfig) -> Decision:
             or _age(inp.now, inp.attitude_time) > cfg.attitude_timeout):
         return Decision(BridgeState.PX4_STALE, False, False)
 
-    if inp.nav_state != NAVIGATION_STATE_OFFBOARD or inp.arming_state != ARMING_STATE_ARMED:
+    if inp.nav_state != NAVIGATION_STATE_OFFBOARD:
         return Decision(BridgeState.NOT_OFFBOARD, False, True)
+
+    if inp.arming_state != ARMING_STATE_ARMED:
+        return Decision(BridgeState.NOT_ARMED, False, True)
 
     if _age(inp.now, inp.cmd_time) > cfg.cmd_timeout:
         return Decision(BridgeState.CMD_TIMEOUT, False, True)

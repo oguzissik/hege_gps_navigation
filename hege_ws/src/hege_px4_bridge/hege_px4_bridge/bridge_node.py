@@ -36,7 +36,8 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool, String
 from std_srvs.srv import Trigger
 from px4_msgs.msg import (OffboardControlMode, TrajectorySetpoint, VehicleAttitude,
-                          VehicleCommand, VehicleCommandAck, VehicleStatus)
+                          VehicleCommand, VehicleCommandAck, VehicleControlMode,
+                          VehicleStatus)
 
 from hege_px4_bridge import ackermann
 from hege_px4_bridge.command_ack import CommandAckWaiter
@@ -94,6 +95,7 @@ class Px4BridgeNode(Node):
         self.declare_parameter("px4_yaw_p", 0.0)             # must equal RO_YAW_P
         self.declare_parameter("cmd_vel_topic", "/cmd_vel")
         self.declare_parameter("vehicle_status_topic", "/fmu/out/vehicle_status_v1")
+        self.declare_parameter("vehicle_control_mode_topic", "/fmu/out/vehicle_control_mode")
         self.declare_parameter("vehicle_command_ack_topic", "/fmu/out/vehicle_command_ack")
         self.declare_parameter("allow_remote_vehicle_commands", False)
 
@@ -134,6 +136,8 @@ class Px4BridgeNode(Node):
         self.nav_state: int | None = None
         self.arming_state: int | None = None
         self.status_time: float | None = None
+        # PX4 commander flags (diagnostic only; not used for gating). "?" = not received yet.
+        self.px4_flags = "offb=? vel=? armed=?"
         self.last_state: BridgeState | None = None
         self.last_ack = "none"
         self.last_disarm_request = float("-inf")
@@ -154,6 +158,8 @@ class Px4BridgeNode(Node):
         self.create_subscription(Bool, "/hege/software_stop", self.on_software_stop, 10)
         self.create_subscription(VehicleAttitude, "/fmu/out/vehicle_attitude", self.on_attitude, PX4_QOS)
         self.create_subscription(VehicleStatus, p("vehicle_status_topic").value, self.on_status, PX4_QOS)
+        self.create_subscription(VehicleControlMode, p("vehicle_control_mode_topic").value,
+                                 self.on_control_mode, PX4_QOS)
         self.create_subscription(VehicleCommandAck, p("vehicle_command_ack_topic").value,
                                  self.on_command_ack, PX4_QOS,
                                  callback_group=self.command_group)
@@ -221,6 +227,13 @@ class Px4BridgeNode(Node):
             self.cmd_v = 0.0
             self.cmd_omega = 0.0
             self.cmd_time = None
+
+    def on_control_mode(self, msg: VehicleControlMode) -> None:
+        """Mirror the flags the PX4 rover controller gates on (AckermannVelControl:
+        flag_control_velocity_enabled && flag_armed && flag_control_offboard_enabled)."""
+        self.px4_flags = (f"offb={int(msg.flag_control_offboard_enabled)} "
+                          f"vel={int(msg.flag_control_velocity_enabled)} "
+                          f"armed={int(msg.flag_armed)}")
 
     def on_command_ack(self, msg: VehicleCommandAck) -> None:
         # A vehicle may have other MAVLink/ROS command sources. Only an ACK
@@ -350,7 +363,7 @@ class Px4BridgeNode(Node):
             self.last_state = decision.state
         msg = String()
         msg.data = (f"{decision.state.value} | nav_state={self.nav_state} arming={self.arming_state} "
-                    f"| psi={self.psi:+.2f} rad | {detail} | ack={self.last_ack}")
+                    f"| {self.px4_flags} | psi={self.psi:+.2f} rad | {detail} | ack={self.last_ack}")
         self.pub_status.publish(msg)
 
     # ------------------------------------------------------------------ services

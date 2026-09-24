@@ -46,7 +46,8 @@ def test_status_and_attitude_have_independent_deadlines():
 
 def test_not_offboard_or_not_armed():
     assert evaluate(inputs(nav_state=0), CFG).state == BridgeState.NOT_OFFBOARD      # MANUAL
-    assert evaluate(inputs(arming_state=1), CFG).state == BridgeState.NOT_OFFBOARD   # DISARMED
+    assert evaluate(inputs(arming_state=1), CFG).state == BridgeState.NOT_ARMED      # DISARMED
+    assert evaluate(inputs(nav_state=0, arming_state=1), CFG).state == BridgeState.NOT_OFFBOARD  # mode first
 
 
 def test_cmd_timeout():
