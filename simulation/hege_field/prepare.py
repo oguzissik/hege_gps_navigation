@@ -8,9 +8,9 @@ from pathlib import Path
 import subprocess
 import xml.etree.ElementTree as ET
 
-# Scene assets (terrain, textures, world) are vendored in ./assets. They were
-# copied once from the teammate's repository at this commit; kept for provenance.
-FRIEND = '4170c7bea836b90559b304b609252dedfc303ffe'
+# Scene assets (terrain, textures, world) are vendored in ./assets. Upstream
+# revision of those files, recorded in the manifest for provenance only.
+SCENE_SOURCE = '4170c7bea836b90559b304b609252dedfc303ffe'
 GZ_MODELS = 'e05f4312d3f28aa621157610584a4870406cb6d3'
 REPO = Path(__file__).resolve().parents[2]
 ASSETS = Path(__file__).resolve().parent / 'assets'
@@ -161,7 +161,7 @@ def prepare(px4, output):
     world.append(model)
     write_xml(world_root, output / 'hege_field.sdf')
     (output / 'manifest.json').write_text(json.dumps({
-        'px4': str(px4), 'px4_version': version, 'friend_commit': FRIEND,
+        'px4': str(px4), 'px4_version': version, 'scene_source_commit': SCENE_SOURCE,
         'gz_models_commit': GZ_MODELS, 'world': 'hege_field', 'model': 'hege_px4',
     }, indent=2) + '\n')
     print(f'Prepared {output / "hege_field.sdf"}')

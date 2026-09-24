@@ -1,15 +1,15 @@
 # HEGE field scene through the existing PX4 architecture
 
-This adds the friend's terrain, textures, four bale visuals and orange HEGE
-model style to the main repository's command architecture:
+This adds a field scene (terrain, textures, four bale visuals) and an orange
+HEGE model to the main repository's command architecture:
 
 `/cmd_vel/{test,teleop,nav}` -> existing `twist_mux` -> `/cmd_vel/selected`
 -> existing `hege_px4_bridge` -> PX4 v1.16.1 Ackermann controller -> simulated
 motor and steering actuators. Sensor feedback returns through PX4 and the
 existing `hege_px4_sensors` adapter.
 
-The field launch does not start Nav2 or a bale collection mission. It imports
-the scene/design, not the friend's autonomy stack. No robot hardware is needed.
+The field launch does not start Nav2 or a bale collection mission; it runs
+the scene and the vehicle model only. No robot hardware is needed.
 Existing real launch, bridge source, sensors, mux configuration, px4_msgs,
 URDF and stock SITL launch are unchanged.
 
@@ -41,7 +41,7 @@ cmake --build .hege_sim/plugin_build -j2
 python3 simulation/hege_field/prepare.py --px4 "$HEGE_PX4_DIR"
 
 cd hege_ws
-# Use the existing px4_msgs installation/overlay; do not copy the friend's.
+# Use the existing px4_msgs installation/overlay (release/1.16, see EXTERNAL_DEPS.txt).
 # Source its install/setup.bash here if it is in a separate workspace.
 colcon build --symlink-install --packages-up-to hege_bringup
 source install/setup.bash
@@ -139,7 +139,7 @@ inspection terminal, then `gz topic -l` and
 ## What is modelled, and what still needs validation
 
 - Wheelbase 1.90 m, track 1.55 m, rear/front radii 0.40/0.275 m, mass 1300 kg
-  follow the existing/friend model design. They are not new measurements.
+  follow the existing model design. They are not new measurements.
 - Virtual steering limit 0.5759 rad follows the last recorded real PX4 value.
   The steering-only Gazebo plugin converts the PX4 servo angle into unequal
   inner/outer wheel angles. It never consumes ROS cmd_vel.
@@ -166,12 +166,12 @@ Harmonic container; source checks alone cannot certify either.
 
 ## Source provenance
 
-- Scene assets in `assets/` were copied from https://github.com/michalczaplinski5/hege-gps-navigation/tree/4170c7bea836b90559b304b609252dedfc303ffe/src/hege_description/worlds (files `hege_field.world`, `field_heightmap.pgm`, `textures/dirt_diffusespecular.png`, `textures/flat_normal.png`), unchanged.
+- Scene assets in `assets/` (`hege_field.world`, `field_heightmap.pgm`, `textures/dirt_diffusespecular.png`, `textures/flat_normal.png`) originate from https://github.com/michalczaplinski5/hege-gps-navigation/tree/4170c7bea836b90559b304b609252dedfc303ffe/src/hege_description/worlds and are unchanged.
 - PX4 v1.16.1 sensor/model source submodule: https://github.com/PX4/PX4-gazebo-models/tree/e05f4312d3f28aa621157610584a4870406cb6d3
 - Actuator topic and scaling contracts: PX4 v1.16.1 `GZMixingInterfaceWheel.cpp`
   and `GZMixingInterfaceServo.cpp`; attachment/startup: `px4-rc.gzsim`.
 - Steering-only Double input and wheel_separation geometry: Gazebo Sim 8
   `src/systems/ackermann_steering/AckermannSteering.cc`.
 
-The teammate's controllers, localization stack, hardware configuration and
-px4_msgs are not imported.
+Nothing else from that repository (controllers, localization, hardware
+configuration, px4_msgs) is used.

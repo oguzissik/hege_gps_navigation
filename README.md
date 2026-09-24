@@ -229,7 +229,7 @@ source /workspaces/hege_gps_navigation/gz_ros2_control_ws/install/setup.bash
 source /workspaces/hege_gps_navigation/hege_ws/install/setup.bash
 
 export ROS_DOMAIN_ID=74
-export ROS_LOCALHOST_ONLY=1
+export ROS_LOCALHOST_ONLY=0
 
 GZ_CONTROL_PREFIX="$(ros2 pkg prefix gz_ros2_control)"
 export GZ_SIM_SYSTEM_PLUGIN_PATH="$GZ_CONTROL_PREFIX/lib:${GZ_SIM_SYSTEM_PLUGIN_PATH:-}"
