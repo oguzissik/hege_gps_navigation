@@ -25,7 +25,7 @@ from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 from rclpy.time import Time
 
-from geometry_msgs.msg import Quaternion, TransformStamped, Vector3
+from geometry_msgs.msg import Point, Quaternion, TransformStamped, Vector3
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu, NavSatFix, NavSatStatus
 from tf2_ros import TransformBroadcaster
@@ -139,7 +139,7 @@ class Px4SensorsNode(Node):
         odom.header.stamp = stamp
         odom.header.frame_id = self.odom_frame
         odom.child_frame_id = self.base_frame
-        odom.pose.pose.position.x, odom.pose.pose.position.y, odom.pose.pose.position.z = p_enu
+        odom.pose.pose.position = Point(x=float(p_enu[0]), y=float(p_enu[1]), z=float(p_enu[2]))
         odom.pose.pose.orientation = self.to_quaternion_msg(q_ros)
 
         # position variance (N,E,D) -> (E,N,U): swap first two, Down/Up flip keeps variance
