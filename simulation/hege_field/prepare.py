@@ -8,9 +8,12 @@ from pathlib import Path
 import subprocess
 import xml.etree.ElementTree as ET
 
+# Scene assets (terrain, textures, world) are vendored in ./assets. They were
+# copied once from the teammate's repository at this commit; kept for provenance.
 FRIEND = '4170c7bea836b90559b304b609252dedfc303ffe'
 GZ_MODELS = 'e05f4312d3f28aa621157610584a4870406cb6d3'
 REPO = Path(__file__).resolve().parents[2]
+ASSETS = Path(__file__).resolve().parent / 'assets'
 LENGTH, TRACK, REAR_RADIUS, FRONT_RADIUS = 1.90, 1.55, 0.40, 0.275
 STEERING = 0.5759  # virtual bicycle angle, matching last recorded RA_MAX_STR_ANG
 
@@ -131,10 +134,13 @@ def prepare(px4, output):
     assets = output / 'assets'
     assets.mkdir(exist_ok=True)
     for relative in ['field_heightmap.pgm', 'textures/dirt_diffusespecular.png', 'textures/flat_normal.png']:
+        source = ASSETS / relative
+        if not source.is_file():
+            raise ValueError(f'Missing vendored asset {source}')
         target = assets / relative
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(git_blob(REPO, FRIEND, 'src/hege_description/worlds/' + relative))
-    world_root = ET.fromstring(git_blob(REPO, FRIEND, 'src/hege_description/worlds/hege_field.world'))
+        target.write_bytes(source.read_bytes())
+    world_root = ET.fromstring((ASSETS / 'hege_field.world').read_bytes())
     world = world_root.find('world')
     world.set('name', 'hege_field')
     # Remove duplicated physics/scene declarations from upstream.
@@ -169,4 +175,4 @@ if __name__ == '__main__':
     try:
         prepare(args.px4.expanduser().resolve(), args.output.expanduser().resolve())
     except (subprocess.CalledProcessError, ValueError) as exc:
-        parser.exit(1, f'{exc}\nFetch friend/main and initialize PX4 v1.16.1 Gazebo submodule first.\n')
+        parser.exit(1, f'{exc}\nInitialize the PX4 v1.16.1 Gazebo submodule first (Tools/simulation/gz).\n')

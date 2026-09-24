@@ -337,10 +337,6 @@ git -C "$HEGE_PX4_DIR" describe --tags --exact-match      # must print v1.16.1
 git -C "$HEGE_PX4_DIR" submodule update --init --recursive Tools/simulation/gz
 make -C "$HEGE_PX4_DIR" px4_sitl                          # 10-20 min the first time
 
-# scene assets are extracted from a pinned commit of the teammate's repository
-git fetch https://github.com/michalczaplinski5/hege-gps-navigation.git \
-  4170c7bea836b90559b304b609252dedfc303ffe
-
 cmake -S simulation/hege_field -B .hege_sim/plugin_build
 cmake --build .hege_sim/plugin_build -j2
 python3 simulation/hege_field/prepare.py --px4 "$HEGE_PX4_DIR"
@@ -348,7 +344,7 @@ python3 simulation/hege_field/prepare.py --px4 "$HEGE_PX4_DIR"
 cd hege_ws && colcon build --symlink-install --packages-up-to hege_bringup
 ```
 
-Everything generated lands in the ignored `.hege_sim/` directory. The PX4 checkout is not modified.
+Everything generated lands in the ignored `.hege_sim/` directory. The PX4 checkout is not modified. The scene assets (terrain heightmap, textures, world file) are committed under `simulation/hege_field/assets/`, so the preparation needs no other repository.
 
 ### Running it
 

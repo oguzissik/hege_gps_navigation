@@ -22,13 +22,9 @@ First open this branch in VS Code and select **Dev Containers: Rebuild Container
 container image. Stop the running simulation before rebuilding the container.
 An Internet connection is required for the initial image/dependency build.
 
-For a fresh clone, fetch the pinned scene source once (an existing `friend`
-remote is not required):
-
-```bash
-git fetch https://github.com/michalczaplinski5/hege-gps-navigation.git \
-  4170c7bea836b90559b304b609252dedfc303ffe
-```
+The scene assets (heightmap, two textures, world file, about 2 MB) are
+committed under `simulation/hege_field/assets/`; nothing has to be fetched from
+another repository.
 
 From the repository root (adjust only the PX4 checkout path if necessary):
 
@@ -51,9 +47,9 @@ colcon build --symlink-install --packages-up-to hege_bringup
 source install/setup.bash
 ```
 
-The preparation reads the pinned friend commit from the already fetched `friend`
-remote's Git objects. If that commit is missing, run `git fetch friend`.
-Generated assets, build files, logs and PX4 parameters stay in ignored `.hege_sim`.
+The preparation copies the vendored assets and generates the world and model
+SDF from them. Generated files, build files, logs and PX4 parameters stay in the
+ignored `.hege_sim` directory.
 Preparation does not edit the PX4 checkout, install an airframe or change its
 normal SITL parameter store. The ROS launcher checks dependencies before starting
 processes and points to container rebuild / workspace sourcing if any are missing.
@@ -86,9 +82,11 @@ source hege_ws/install/setup.bash
 python3 simulation/hege_field/run.py ros
 ```
 
-The scripts select ROS domain **74**, localhost-only ROS discovery, XRCE UDP
-port **8889**, and Gazebo partition **hege-field-sim**. The real Jetson domain 73
-and agent port 8888 are separate. No process automatically arms or sends motion.
+The scripts select ROS domain **74**, `ROS_LOCALHOST_ONLY=0`, XRCE UDP
+port **8889** (passed to PX4 SITL as `PX4_UXRCE_DDS_PORT`, which is what its
+`rcS` reads), and Gazebo partition **hege-field-sim**. The real Jetson domain 73
+and agent port 8888 are separate. Do not set `ROS_LOCALHOST_ONLY=1`: the agent
+ignores that variable and ROS nodes then cannot discover it. No process automatically arms or sends motion.
 ROS nodes retain wall-clock time, as in the existing PX4 SITL bridge. Do not pause
 or accelerate Gazebo during command/watchdog tests.
 
@@ -98,11 +96,13 @@ or accelerate Gazebo during command/watchdog tests.
 cd /workspaces/hege_gps_navigation
 source /opt/ros/humble/setup.bash
 source hege_ws/install/setup.bash
-export ROS_DOMAIN_ID=74 ROS_LOCALHOST_ONLY=1
+export ROS_DOMAIN_ID=74 ROS_LOCALHOST_ONLY=0
+ros2 daemon stop
 ros2 topic echo /hege/bridge/status --once
 ```
 
-Wait for fresh PX4 state (not WAITING_PX4). Then request the modes explicitly:
+Wait for fresh PX4 state, i.e. `NOT_OFFBOARD | ... | offb=0 vel=0 armed=0`, not
+`WAITING_PX4`. Then request the modes explicitly:
 
 ```bash
 ros2 service call /hege/bridge/set_offboard std_srvs/srv/Trigger '{}'
@@ -110,8 +110,11 @@ ros2 service call /hege/bridge/arm std_srvs/srv/Trigger '{}'
 ros2 topic echo /hege/bridge/status --once
 ```
 
-Check both accepted responses and `nav_state=14 arming=2`. If rejected, read the
-PX4 terminal's arming error; do not disable its checks. For simulated motion:
+Check both accepted responses and `CMD_TIMEOUT | nav_state=14 arming=2 | offb=1 vel=1 armed=1`.
+If rejected, read the PX4 terminal's arming error; do not disable its checks.
+The repository's scripted slow drive is
+`ros2 run hege_px4_bridge step_test --ros-args -p confirm_motion_test:=true`
+(0.3 m/s straight, then gentle left and right). For manual commands:
 
 ```bash
 ros2 topic pub -r 20 --times 100 /cmd_vel/test geometry_msgs/msg/Twist \
@@ -163,13 +166,12 @@ Harmonic container; source checks alone cannot certify either.
 
 ## Source provenance
 
-- Friend scene/assets: https://github.com/michalczaplinski5/hege-gps-navigation/tree/4170c7bea836b90559b304b609252dedfc303ffe/src/hege_description
+- Scene assets in `assets/` were copied from https://github.com/michalczaplinski5/hege-gps-navigation/tree/4170c7bea836b90559b304b609252dedfc303ffe/src/hege_description/worlds (files `hege_field.world`, `field_heightmap.pgm`, `textures/dirt_diffusespecular.png`, `textures/flat_normal.png`), unchanged.
 - PX4 v1.16.1 sensor/model source submodule: https://github.com/PX4/PX4-gazebo-models/tree/e05f4312d3f28aa621157610584a4870406cb6d3
 - Actuator topic and scaling contracts: PX4 v1.16.1 `GZMixingInterfaceWheel.cpp`
   and `GZMixingInterfaceServo.cpp`; attachment/startup: `px4-rc.gzsim`.
 - Steering-only Double input and wheel_separation geometry: Gazebo Sim 8
   `src/systems/ackermann_steering/AckermannSteering.cc`.
 
-Assets are extracted from pinned source objects at preparation time, retaining
-their upstream provenance; the friend's controllers, localization stack,
-hardware configuration and px4_msgs are not imported.
+The teammate's controllers, localization stack, hardware configuration and
+px4_msgs are not imported.

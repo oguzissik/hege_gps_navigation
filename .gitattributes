@@ -1,0 +1,2 @@
+# raw greymap heightmap has no NUL bytes; keep git from treating it as text
+*.pgm binary
