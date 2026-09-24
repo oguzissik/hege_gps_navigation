@@ -60,6 +60,7 @@ RUN apt-get update \
         ros-humble-rosbag2-storage-mcap \
         ros-humble-tf-transformations \
         ros-humble-tf2-tools \
+        ros-humble-twist-mux \
         ros-humble-xacro \
     && rm -rf /var/lib/apt/lists/*
 
@@ -71,11 +72,24 @@ RUN curl -fsSL https://packages.osrfoundation.org/gazebo.gpg \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
         gz-harmonic \
+        libgz-sim8-dev \
         gstreamer1.0-plugins-base \
         gstreamer1.0-plugins-good \
         libgstreamer1.0-dev \
         libgstreamer-plugins-base1.0-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Standalone Agent version recommended for PX4 v1.16 (client uses XRCE v2).
+# Build before sourcing ROS so its bundled DDS dependencies are used.
+RUN git clone --depth 1 --branch v2.4.3 \
+        https://github.com/eProsima/Micro-XRCE-DDS-Agent.git /tmp/hege-xrce-agent \
+    && cmake -S /tmp/hege-xrce-agent -B /tmp/hege-xrce-agent/build \
+        -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build /tmp/hege-xrce-agent/build -j2 \
+    && cmake --install /tmp/hege-xrce-agent/build \
+    && ldconfig \
+    && test -x /usr/local/bin/MicroXRCEAgent \
+    && rm -rf /tmp/hege-xrce-agent
 
 # Python modules required by the PX4 v1.16.1 build system.
 RUN git clone --depth 1 --branch v1.16.1 \

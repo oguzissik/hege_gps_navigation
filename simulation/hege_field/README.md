@@ -15,6 +15,21 @@ URDF and stock SITL launch are unchanged.
 
 ## One-time preparation, inside the existing Humble container
 
+First open this branch in VS Code and select **Dev Containers: Rebuild Container**
+(or **Reopen in Container** for a fresh clone). The Dockerfile installs
+`ros-humble-twist-mux`, standalone `MicroXRCEAgent` **v2.4.3**, and
+`libgz-sim8-dev` automatically. Pulling files alone does not update an existing
+container image. Stop the running simulation before rebuilding the container.
+An Internet connection is required for the initial image/dependency build.
+
+For a fresh clone, fetch the pinned scene source once (an existing `friend`
+remote is not required):
+
+```bash
+git fetch https://github.com/michalczaplinski5/hege-gps-navigation.git \
+  4170c7bea836b90559b304b609252dedfc303ffe
+```
+
 From the repository root (adjust only the PX4 checkout path if necessary):
 
 ```bash
@@ -24,10 +39,6 @@ git -C "$HEGE_PX4_DIR" describe --tags --exact-match
 # Must say v1.16.1. Do not change a different checkout automatically.
 git -C "$HEGE_PX4_DIR" submodule update --init --recursive Tools/simulation/gz
 make -C "$HEGE_PX4_DIR" px4_sitl
-
-# Only needed if CMake cannot find Gazebo development headers:
-# sudo apt-get update
-# sudo apt-get install libgz-sim8-dev
 
 cmake -S simulation/hege_field -B .hege_sim/plugin_build
 cmake --build .hege_sim/plugin_build -j2
@@ -44,7 +55,8 @@ The preparation reads the pinned friend commit from the already fetched `friend`
 remote's Git objects. If that commit is missing, run `git fetch friend`.
 Generated assets, build files, logs and PX4 parameters stay in ignored `.hege_sim`.
 Preparation does not edit the PX4 checkout, install an airframe or change its
-normal SITL parameter store. `MicroXRCEAgent` must already be installed.
+normal SITL parameter store. The ROS launcher checks dependencies before starting
+processes and points to container rebuild / workspace sourcing if any are missing.
 
 ## Run: three container terminals
 

@@ -10,6 +10,28 @@ import subprocess
 REPO = Path(__file__).resolve().parents[2]
 
 
+def check_ros_dependencies():
+    missing = []
+    for executable in ['ros2', 'MicroXRCEAgent']:
+        if not shutil.which(executable):
+            missing.append(executable)
+    try:
+        from ament_index_python.packages import get_package_prefix, PackageNotFoundError
+    except ImportError:
+        missing.append('ROS Python environment (source /opt/ros/humble/setup.bash)')
+    else:
+        for package in ['twist_mux', 'hege_bringup', 'hege_px4_bridge', 'hege_px4_sensors', 'px4_msgs']:
+            try:
+                get_package_prefix(package)
+            except PackageNotFoundError:
+                missing.append(package)
+    if missing:
+        raise ValueError('Missing: ' + ', '.join(missing) + '.\n'
+                         'Pull this branch and use VS Code: Dev Containers: Rebuild Container.\n'
+                         'Then source /opt/ros/humble/setup.bash and hege_ws/install/setup.bash.\n'
+                         'See simulation/hege_field/README.md for the workspace build.')
+
+
 def command_for(part, runtime, env):
     manifest = json.loads((runtime / 'manifest.json').read_text())
     px4 = Path(manifest['px4'])
@@ -21,6 +43,7 @@ def command_for(part, runtime, env):
         env['GZ_SIM_SYSTEM_PLUGIN_PATH'] = str(plugins) + os.pathsep + env.get('GZ_SIM_SYSTEM_PLUGIN_PATH', '')
         return ['gz', 'sim', '-r', str(runtime / 'hege_field.sdf')]
     if part == 'ros':
+        check_ros_dependencies()
         return ['ros2', 'launch', 'hege_bringup', 'hege_field.launch.py']
     binary = px4 / 'build/px4_sitl_default/bin/px4'
     if not binary.is_file():
@@ -71,4 +94,4 @@ if __name__ == '__main__':
         print('Starting:', ' '.join(command), flush=True)
         os.execvpe(command[0], command, env)
     except (OSError, ValueError, subprocess.CalledProcessError) as exc:
-        parser.exit(1, f'{exc}\nRun prepare.py first.\n')
+        parser.exit(1, f'{exc}\nSee simulation/hege_field/README.md for setup.\n')
