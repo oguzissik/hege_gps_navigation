@@ -13,11 +13,12 @@ rosdep update --rosdistro humble
 if find "${WORKSPACE}/src" -name package.xml -print -quit 2>/dev/null | grep -q .; then
   # px4_msgs is cloned from source (see README), not resolvable by rosdep.
   # -r: keep going on individual failures instead of aborting the whole setup.
+  sudo apt-get update
   rosdep install \
     --from-paths "${WORKSPACE}/src" \
     --ignore-src \
     --rosdistro humble \
-    --skip-keys px4_msgs \
+    --skip-keys "px4_msgs ros_gz_sim ros_gz_bridge gz_ros2_control" \
     -r \
     -y || echo "rosdep reported problems; continuing with the build"
 
