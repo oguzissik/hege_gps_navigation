@@ -187,7 +187,7 @@ colcon build --symlink-install
 source install/setup.bash
 ```
 
-`set +u` is used because some ROS setup scripts reference variables that may not yet exist when the shell has `nounset` enabled. The container's `postCreateCommand` only builds packages under the top-level `src/`, which is empty, so this `colcon build` in `hege_ws` is required.
+`set +u` is used because some ROS setup scripts reference variables that may not yet exist when the shell has `nounset` enabled. The container's `postCreateCommand` already runs `rosdep install` and `colcon build` in `hege_ws` (via `HEGE_WS`), but on a fresh clone `px4_msgs` is not present yet at that point, so the `colcon build` above is still needed after the clones.
 
 On the real Jetson, `px4_msgs` lives in a separate workspace (`~/ws_others`), see "Real rover connection".
 

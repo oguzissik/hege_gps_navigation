@@ -11,15 +11,18 @@ sudo rosdep init 2>/dev/null || true
 rosdep update --rosdistro humble
 
 if find "${WORKSPACE}/src" -name package.xml -print -quit 2>/dev/null | grep -q .; then
+  # px4_msgs is cloned from source (see README), not resolvable by rosdep.
+  # -r: keep going on individual failures instead of aborting the whole setup.
   rosdep install \
     --from-paths "${WORKSPACE}/src" \
     --ignore-src \
     --rosdistro humble \
-    --recursive \
-    --yes
+    --skip-keys px4_msgs \
+    -r \
+    --yes || echo "rosdep reported problems; continuing with the build"
 
   cd "${WORKSPACE}"
-  colcon build --symlink-install
+  colcon build --symlink-install || echo "colcon build failed; clone px4_msgs (README) and rebuild hege_ws manually"
 else
   echo "No ROS packages exist in ${WORKSPACE}/src yet; skipping colcon build."
 fi
