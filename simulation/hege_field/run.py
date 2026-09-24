@@ -35,7 +35,7 @@ def check_ros_dependencies():
 def command_for(part, runtime, env):
     manifest = json.loads((runtime / 'manifest.json').read_text())
     px4 = Path(manifest['px4'])
-    env.update(ROS_DOMAIN_ID='74', ROS_LOCALHOST_ONLY='1', GZ_PARTITION='hege-field-sim')
+    env.update(ROS_DOMAIN_ID='74', ROS_LOCALHOST_ONLY='0', GZ_PARTITION='hege-field-sim')
     if part == 'world':
         plugins = REPO / '.hege_sim/plugin_build'
         if not (plugins / 'libHegeWheelDrive.so').is_file():
@@ -57,7 +57,8 @@ def command_for(part, runtime, env):
             del env[key]
     env.update(PX4_SYS_AUTOSTART='4012', PX4_SIMULATOR='gz',
                PX4_SIM_MODEL='gz_rover_ackermann', PX4_GZ_STANDALONE='1',
-               PX4_GZ_MODEL_NAME='hege_px4', PX4_GZ_WORLD='hege_field')
+               PX4_GZ_MODEL_NAME='hege_px4', PX4_GZ_WORLD='hege_field',
+               PX4_UXRCE_DDS_PORT='8889')
     params = {
         'UXRCE_DDS_DOM_ID': 74, 'UXRCE_DDS_PRT': 8889,
         'RA_WHEEL_BASE': 1.90, 'RA_MAX_STR_ANG': 0.5759,

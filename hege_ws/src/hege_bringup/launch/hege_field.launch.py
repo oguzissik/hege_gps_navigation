@@ -11,7 +11,7 @@ def generate_launch_description():
     sensors = PathJoinSubstitution([FindPackageShare('hege_px4_sensors'), 'config', 'sensors.yaml'])
     return LaunchDescription([
         SetEnvironmentVariable('ROS_DOMAIN_ID', '74'),
-        SetEnvironmentVariable('ROS_LOCALHOST_ONLY', '1'),
+        SetEnvironmentVariable('ROS_LOCALHOST_ONLY', '0'),
         ExecuteProcess(cmd=['MicroXRCEAgent', 'udp4', '-p', '8889'], output='screen'),
         Node(package='twist_mux', executable='twist_mux', name='twist_mux',
              parameters=[PathJoinSubstitution([bringup, 'config', 'twist_mux.yaml'])],
