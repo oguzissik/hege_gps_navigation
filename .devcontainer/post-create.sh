@@ -19,7 +19,7 @@ if find "${WORKSPACE}/src" -name package.xml -print -quit 2>/dev/null | grep -q 
     --rosdistro humble \
     --skip-keys px4_msgs \
     -r \
-    --yes || echo "rosdep reported problems; continuing with the build"
+    -y || echo "rosdep reported problems; continuing with the build"
 
   cd "${WORKSPACE}"
   colcon build --symlink-install || echo "colcon build failed; clone px4_msgs (README) and rebuild hege_ws manually"
